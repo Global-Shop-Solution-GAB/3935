@@ -1,0 +1,168 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.uPart.Define("PART_NUMBER",String,PART_NUMBER)
+Variable.UDT.uPart.Define("PAL_LENGTH",String,PAL_LENGTH)
+Variable.UDT.uPart.Define("PAL_WIDTH",String,PAL_WIDTH)
+Variable.UDT.uPart.Define("PAL_HEIGHT",String,PAL_HEIGHT)
+Variable.UDT.uPart.Define("AMT_BOX_PER_LAY_PAL",String,AMT_BOX_PER_LAY_PAL)
+Variable.UDT.uPart.Define("AMT_LAY_PER_PAL",String,AMT_LAY_PER_PAL)
+Variable.UDT.uPart.Define("INNER_CART_LENGTH",String,INNER_CART_LENGTH)
+Variable.UDT.uPart.Define("INNER_CART_WIDTH",String,INNER_CART_WIDTH)
+Variable.UDT.uPart.Define("INNER_CART_HEIGHT",String,INNER_CART_HEIGHT)
+Variable.UDT.uPart.Define("GSS_PART_INNER",String,GSS_PART_INNER)
+Variable.UDT.uPart.Define("INNER_LENGTH",String,INNER_LENGTH)
+Variable.UDT.uPart.Define("INNER_WIDTH",String,INNER_WIDTH)
+Variable.UDT.uPart.Define("INNER_HEIGHT",String,INNER_HEIGHT)
+Variable.UDT.uPart.Define("INNER_CART_CUBFT",String,INNER_CART_CUBFT)
+Variable.UDT.uPart.Define("INNER_CART_WT_CALC",String,INNER_CART_WT_CALC)
+Variable.UDT.uPart.Define("GSS_PART_MASTER",String,GSS_PART_MASTER)
+Variable.UDT.uPart.Define("MSTR_LENGTH",String,MSTR_LENGTH)
+Variable.UDT.uPart.Define("MSTR_WIDTH",String,MSTR_WIDTH)
+Variable.UDT.uPart.Define("MSTR_HEIGHT",String,MSTR_HEIGHT)
+Variable.UDT.uPart.Define("MSTR_CART_CUBFT",String,MSTR_CART_CUBFT)
+Variable.UDT.uPart.Define("BP_1",String,BP_1)
+Variable.UDT.uPart.Define("BP_2",String,BP_2)
+Variable.UDT.uPart.Define("BP_3",String,BP_3)
+Variable.UDT.uPart.Define("BP_4",String,BP_4)
+Variable.UDT.uPart.Define("BP_5",String,BP_5)
+Variable.UDT.uPart.Define("BP_6",String,BP_6)
+Variable.UDT.uPart.Define("BP_7",String,BP_7)
+Variable.UDT.uPart.Define("BP_8",String,BP_8)
+Variable.UDT.uPart.Define("BP_9",String,BP_9)
+Variable.UDT.uPart.Define("BP_10",String,BP_10)
+Variable.UDT.uPart.Define("BP_11",String,BP_11)
+Variable.UDT.uPart.Define("BP_12",String,BP_12)
+Variable.UDT.uPart.Define("BP_13",String,BP_13)
+Variable.UDT.uPart.Define("BP_14",String,BP_14)
+Variable.UDT.uPart.Define("BP_15",String,BP_15)
+Variable.UDT.uPart.Define("BP_16",String,BP_16)
+Variable.UDT.uPart.Define("BP_17",String,BP_17)
+Variable.UDT.uPart.Define("BP_18",String,BP_18)
+Variable.UDT.uPart.Define("BP_19",String,BP_19)
+Variable.UDT.uPart.Define("BP_20",String,BP_20)
+Variable.UDT.uPart.Define("SHORT_STATEMENT",String,SHORT_STATEMENT)
+Variable.UDT.uPart.Define("MED_STATEMENT",String,MED_STATEMENT)
+Variable.UDT.uPart.Define("LONG_STATEMENT",String,LONG_STATEMENT)
+Variable.UDT.uPart.Define("KEY_WORDS",String,KEY_WORDS)
+Variable.UDT.uPart.Define("LOCATION",String,LOCATION)
+Variable.uGlobal.uPart.Declare("uPart")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+'This program is a custom program that works with GCG_Add_Inv_Mast_Input and allows for the copying/deletion of parts from a custom table
+'Coded by:WAW
+'Date: 6/29/15
+
+V.Local.sError.Declare(String)
+V.Local.ssql.Declare(String)
+V.Local.sfrompartnum.Declare(String)
+V.Local.stopartnum.Declare(String)
+V.Local.ssql2.Declare(String)
+
+'Open database connection
+F.ODBC.Connection!CON.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,7200)
+
+F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+
+'if the part is to be deleted, delete the selected part from the custom table as well
+F.Intrinsic.Control.Case(10185)
+F.Intrinsic.Control.If(V.Caller.Switches,=,"D")
+
+	F.Intrinsic.Control.If(V.Passed.000007,<>,"")
+		F.Intrinsic.String.Concat("Select * from GCG_3935_INVMAST where PART_NUMBER = '",V.Passed.000007,"'",V.Local.ssql)
+		F.ODBC.Connection!con.OpenRecordsetRW("rst",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,<>,True)
+			'if there is a part that matches in the custom table, delete it
+			F.Intrinsic.String.Concat("Delete from GCG_3935_INVMAST where PART_NUMBER = '",V.Passed.000007,"'",V.Local.sSQL)
+			F.ODBC.Connection!CON.Execute(V.Local.ssql)
+			F.ODBC.con!rst.Close
+			F.Intrinsic.Control.CallSub(Unload)
+		F.Intrinsic.Control.Else
+			F.ODBC.con!rst.Close
+			F.Intrinsic.Control.CallSub(Unload)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.intrinsic.control.endif
+
+F.Intrinsic.Control.Case(13320)
+F.Intrinsic.Control.If(V.Caller.Switches,=,"C")
+	'make sure that there have been parts entered into the to and from fields
+	F.Intrinsic.Control.If(V.Passed.000008,<>,"")
+	F.Intrinsic.Control.AndIf(V.Passed.000015,<>,"")
+		'select all the information for the 'from' part and load it to the UDT
+		F.Intrinsic.String.Concat("Select * from GCG_3935_INVMAST where PART_NUMBER = '",V.Passed.000008,"'",V.Local.ssql)
+		F.ODBC.Connection!con.OpenRecordsetRW("rst",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,<>,True)
+			F.Intrinsic.Variable.LoadUDTFromRecordset("con","rst","uglobal.uPart","false",1)
+			F.ODBC.CON!rst.Close
+		F.Intrinsic.Control.Else
+			F.ODBC.con!rst.Close
+			F.Intrinsic.Control.CallSub(Unload)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndSelect
+
+'look for the "to" part in the custom table, if it is not there add the new information, if it is there update the information
+F.Intrinsic.string.Build("Select * from GCG_3935_INVMAST where PART_NUMBER = '{0}'",V.Passed.000015,V.Local.ssql)
+F.ODBC.Connection!CON.OpenRecordsetRW("rstwrite",V.Local.ssql)
+F.Intrinsic.Control.If(V.ODBC.CON!rstwrite.EOF,=,True)
+	'if it doesn't find the part listed, add it to the custom table
+	F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uPart!PART_NUMBER,V.Passed.000015)
+	F.Intrinsic.Variable.SaveUDTToRecordSet("con","rstwrite","v.uglobal.uPart")
+	F.ODBC.CON!rstwrite.Close
+F.Intrinsic.Control.Else
+	'if it does find the part listed, delete that part and copy the other part in its place
+	F.Intrinsic.String.Build("DELETE FROM GCG_3935_INVMAST where PART_NUMBER = '{0}'",V.Passed.000015,V.Local.ssql)
+	F.ODBC.Connection!CON.OpenRecordsetRW("rstdelete",V.Local.ssql)
+	F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uPart!PART_NUMBER,V.Passed.000015)
+	F.Intrinsic.Variable.SaveUDTToRecordSet("con","rstwrite","v.uglobal.uPart")
+	F.ODBC.CON!rstwrite.Close
+	F.ODBC.CON!rstdelete.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("GCG_3935_Copy_Delete_Inv_Mast_Input.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Unload)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+F.Intrinsic.Control.SetErrorHandler("form1_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'close database connection
+F.ODBC.Connection!CON.Close
+
+'end the program
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("form1_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("GCG_3935_Copy_Delete_Inv_Mast_Input.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Unload.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_Copy_Delete_Inv_Mast_Input$}$WAW$}$6/29/2015
+Program.Sub.Comments.End
+
